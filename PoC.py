@@ -13,7 +13,7 @@ def is_inside(y: np.array, x: np.array) -> bool:
 
     polygon = Polygon(lon_lat_vec) # create polygon
     point = Point(y,x) # create point
-    return polygon.contains(point) or point.within(polygon)
+    return polygon.contains(point) or point.within(polygon) # check if polygon contains point OR check if a point is in the polygon 
 
 def is_in_range(coordinate: tuple) -> bool:
     max_distance = 1000
