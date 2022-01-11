@@ -1,49 +1,45 @@
-import numpy as np
-
+# Documentation: https://shapely.readthedocs.io/en/stable/manual.html#polygons
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
+# Documentation: https://geopy.readthedocs.io/en/stable/
 from geopy import distance
 
-def is_inside(x: float, y: float) -> bool:
-    latitude = np.array([-15.527791, -16.045813, -16.040534, -15.517205]) # x
-    longitude = np.array([-48.205135, -48.275706, -47.319257, -47.423697]) # y
-    # Federal District coordinates
-    squared_coord = [(-15.527791, -48.205135), (-16.045813, -48.275706), (-16.040534, -47.319257), (-15.517205, -47.423697)]
+# Constants
+# (x, y) tuples
+CITIES = {
+    "Sao Paulo": [(-23.564931, -46.654846), (-23.540383, -46.655533), (-23.538652, -46.620008), (-23.563515, -46.617088)],
+    "Rio de Janeiro": [(-22.944799, -43.276982), (-22.879655, -43.284196), (-22.879655, -43.186650), (-22.927725, -43.176687)],
+    "Fortaleza": [(-3.773819, -38.571732), (-3.693652, -38.583528),(-3.686799, -38.472904), (-3.766282, -38.457101) ],
+    "Distrito Federal": [(-16.061650, -48.270701), (-15.511912, -48.204739), (-15.506619, -47.435127), (-16.061650, -47.325190)],
+}
+MAX_DISTANCE = 1000
+REFERENCE_POINT = (-15.799356, -47.912303)
 
-    polygon = Polygon(squared_coord) # create polygon
-    point = Point(x, y) # create point
+
+def is_inside(point: Point, coordinates: list) -> bool:
+    polygon = Polygon(coordinates) # create polygon
+    # point.within(polygon) # check if a point is in the polygon 
     return polygon.contains(point) # check if polygon contains point OR check if a point is in the polygon 
 
 def is_in_range(coordinate: tuple) -> bool:
-    max_distance = 1000
-    reference_point = (-15.799356, -47.912303)
+    distance_to_center = distance.distance(coordinate, REFERENCE_POINT).meters
+    return distance_to_center <= MAX_DISTANCE
 
-    distance_to_center = distance.distance(coordinate, reference_point).meters
-
-    return distance_to_center <= max_distance
+def city_name(x: float, y: float) -> str:
+    for city in CITIES:
+        if is_inside(Point(x, y), CITIES[city]):
+            return city
+    return "Out of range"
 
 
 if __name__ == "__main__":
-    # inside
-    x_inside, y_inside = (-15.843226, -48.027127)
-    inside_range = (-15.800647, -47.909934)
-    # outside
-    x_outside, y_outside = (-16.378121, -48.947742)
-    outside_range = (-15.843226, -48.027127)
-    
-
-    print(f"Boundary results:", f"Inside test: {is_inside(x_inside, y_inside)}", f"Outside test: {is_inside(x_outside, y_outside)}", sep="\n")
-    print("\n\n")
-    print(f"Range results:", f"Inside test: {is_in_range(inside_range)}", f"Outside test: {is_in_range(outside_range)}", sep="\n")
-
-    # Tests
-    assert is_inside(-15.618408, -47.658203) == True  # Planaltina
-    assert is_inside(-15.734101, -47.870532) == True  # Lago Norte 
-    assert is_inside(-15.817360, -48.110467) == True  # Ceilândia
-    assert is_inside(-16.299051, -47.944201) == False # Luziânia
-    assert is_inside(-23.765237, -46.755133) == False # São Paulo
-    assert is_inside(-13.025966, -38.531872) == False # Salvador
+    # Tests: https://www.latlong.net/
+    assert city_name(-23.551045, -46.633376) == "Sao Paulo"
+    assert city_name(-22.912547, -43.209686) == "Rio de Janeiro"
+    assert city_name(-3.743671, -38.529144) == "Fortaleza"
+    assert city_name(-15.618408, -47.658203) == "Distrito Federal"
+    assert city_name(-10.141932, -48.189835) == "Out of range"
     assert is_in_range((-15.800306, -47.910028)) == True
     assert is_in_range((-15.800285, -47.914262)) == True
     assert is_in_range((-15.799439, -47.911878)) == True
